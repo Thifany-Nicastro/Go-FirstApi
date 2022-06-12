@@ -6,14 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
-
-var conn *gorm.DB
-
-func init() {
-	conn = config.OpenConnection()
-}
 
 func CreateBook(c *gin.Context) {
 	var book models.Book
@@ -26,7 +19,7 @@ func CreateBook(c *gin.Context) {
 		return
 	}
 
-	result := conn.Create(&book)
+	result := config.Database.Create(&book)
 
 	c.IndentedJSON(http.StatusCreated, result.RowsAffected)
 }
@@ -34,7 +27,7 @@ func CreateBook(c *gin.Context) {
 func GetAllBooks(c *gin.Context) {
 	var books []models.Book
 
-	conn.Find(&books)
+	config.Database.Find(&books)
 
 	c.IndentedJSON(http.StatusOK, books)
 }
@@ -44,8 +37,7 @@ func GetBook(c *gin.Context) {
 
 	book := models.Book{ID: id}
 
-	conn.First(&book)
-	// db.First(&book, "id = ?", id)
+	config.Database.First(&book)
 
 	c.IndentedJSON(http.StatusOK, book)
 }
@@ -55,7 +47,7 @@ func DeleteBook(c *gin.Context) {
 
 	book := models.Book{ID: id}
 
-	conn.Delete(&book)
+	config.Database.Delete(&book)
 
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"message": "id #" + id + " deleted",
@@ -67,11 +59,11 @@ func UpdateBook(c *gin.Context) {
 
 	book := models.Book{ID: id}
 
-	conn.First(&book)
+	config.Database.First(&book)
 
 	c.BindJSON(&book)
 
-	conn.Save(&book)
+	config.Database.Save(&book)
 
 	c.IndentedJSON(http.StatusOK, book)
 }
