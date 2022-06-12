@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'go_db'
+      MYSQL_USER: 'docker'
+      MYSQL_PASSWORD: 'docker'
+      MYSQL_ROOT_PASSWORD: 'docker'
+    ports:
+      - 3306:3306
+    volumes:
+      - my-db:/var/lib/mysql
+
+
+volumes:
+  my-db:
