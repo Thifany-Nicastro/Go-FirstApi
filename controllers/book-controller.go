@@ -1,33 +1,31 @@
 package controllers
 
 import (
-	"go-booksapi/config"
-	"go-booksapi/dtos"
-	"go-booksapi/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"go-booksapi/dtos"
+	"go-booksapi/repositories"
 )
 
 func CreateBook(c *gin.Context) {
-	var data dtos.BookRequestBody
+	var request dtos.BookRequestBody
 
-	if err := c.ShouldBindJSON(&data); err != nil {
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
-	book := models.Book{
-		Title:  data.Title,
-		Author: data.Author,
-	}
+	err := repositories.Create(request)
 
-	if result := config.Database.Create(&book); result.Error != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": result.Error.Error(),
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
 		})
+
 		return
 	}
 
@@ -35,34 +33,39 @@ func CreateBook(c *gin.Context) {
 }
 
 func GetAllBooks(c *gin.Context) {
-	var books []models.Book
-
-	config.Database.Find(&books)
-
-	c.IndentedJSON(http.StatusOK, books)
+	c.IndentedJSON(http.StatusOK, repositories.FindAll())
 }
 
 func GetBook(c *gin.Context) {
-	// var param dtos.BookRequestParams
+	book, err := repositories.FindById(c.Param("id"))
 
-	// if err := c.ShouldBindUri(&param); err != nil {
-	// 	c.JSON(400, gin.H{
-	// 		"msg": err.Error(),
-	// 	})
-	// 	return
-	// }
-
-	// book := models.Book{
-	// 	ID: param.ID,
-	// }
-
-	id := c.Param("id")
-
-	book := models.Book{ID: id}
-
-	if result := config.Database.First(&book); result.Error != nil {
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "Book not found",
+		})
+
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, book)
+}
+
+func UpdateBook(c *gin.Context) {
+	id := c.Param("id")
+	var request dtos.BookRequestBody
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	book, err := repositories.Update(id, request)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
 		})
 
 		return
@@ -74,9 +77,9 @@ func GetBook(c *gin.Context) {
 func DeleteBook(c *gin.Context) {
 	id := c.Param("id")
 
-	book := models.Book{ID: id}
+	err := repositories.Delete(id)
 
-	if result := config.Database.Delete(&book); result.RowsAffected == 0 {
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"message": "Book not found",
 		})
@@ -85,20 +88,6 @@ func DeleteBook(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{
-		"message": "id #" + id + " deleted",
+		"message": "Book " + id + " deleted",
 	})
-}
-
-func UpdateBook(c *gin.Context) {
-	id := c.Param("id")
-
-	book := models.Book{ID: id}
-
-	config.Database.First(&book)
-
-	c.BindJSON(&book)
-
-	config.Database.Save(&book)
-
-	c.IndentedJSON(http.StatusOK, book)
 }
