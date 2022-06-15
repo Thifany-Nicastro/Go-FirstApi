@@ -8,6 +8,14 @@ import (
 	"go-booksapi/models"
 )
 
+type BookRepositoryInterface interface {
+	FindAll() []models.Book
+	FindByID(id string) (models.Book, error)
+	Create(request dtos.BookRequestBody) error
+	Update(id string, request dtos.BookRequestBody) (models.Book, error)
+	Delete(id string) error
+}
+
 func FindAll() []models.Book {
 	var books []models.Book
 
